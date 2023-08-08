@@ -19,9 +19,9 @@
 #include "minivtun.h"
 
 struct minivtun_config config = {
-	.ifname = "",
-	.tun_mtu = 1300,
-	.tun_qlen = 1500, /* driver default: 500 */
+	.ifname = "", 
+	.tun_mtu = 1300,  //максимальный объём данных, который может быть передан протоколом за одну итерацию
+	.tun_qlen = 1500, //txqueuelen - Это размер буфера передачи. Когда буфер наполняется до этого граничного значения, данные передаются в сеть. Размер очереди пакетов на сетевом интерфейсе. Устанавливает длину очереди передачи для устройства.
 	.crypto_passwd = "",
 	.crypto_type = NULL,
 	.pid_file = NULL,
@@ -47,19 +47,20 @@ struct state_variables state = {
 	.sockfd = -1,
 };
 
-static void vt_route_add(short af, void *n, int prefix, void *g)
+static void vt_route_add(short af /*ip or ipv6&*/, void *n, int prefix, void *g)  //virtual route add ?
+/*Добавляет правило маршрутизации на основе ip адреса? */
 {
 	union {
-		struct in_addr in;
+		struct in_addr in; //Структура in_addr представляет собой адрес интернета. 
 		struct in6_addr in6;
 	} *network = n, *gateway = g;
-	struct vt_route *rt;
-
+	
+	struct vt_route *rt; //Таблица псевдомаршрутов для привязки клиентских подсетей к соответствующим подключенным виртуальным адресам.
 	rt = malloc(sizeof(struct vt_route));
 	memset(rt, 0x0, sizeof(*rt));
 
 	rt->af = af;
-	rt->prefix = prefix;
+	rt->prefix = prefix; //непрерывный блок пространства IP-адресов, соответствующий сети, в которой сетевая часть совпадает для всех хостов
 	if (af == AF_INET) {
 		rt->network.in = network->in;
 		rt->network.in.s_addr &= prefix ? htonl(~((1 << (32 - prefix)) - 1)) : 0;
@@ -154,9 +155,9 @@ static void print_help(int argc, char *argv[])
 	printf("Options:\n");
 	printf("  -l, --local <ip:port>               local IP:port for server to listen\n");
 	printf("  -r, --remote <host:port>            host:port of server to connect (brace with [] for bare IPv6)\n");
-	printf("  -n, --ifname <ifname>               virtual interface name\n");
+	printf("  -n, --ifname <ifname>               virtual interface name\n"); // имя виртуальный сетевой адаптер, который будет использоваться для подключения клиентов VPN
 	printf("  -m, --mtu <mtu>                     set MTU size, default: %u.\n", config.tun_mtu);
-	printf("  -Q, --qlen <qlen>                   set TX queue length, default: %u\n", config.tun_qlen);
+	printf("  -Q, --qlen <qlen>                   set TX queue length, default: %u\n", config.tun_qlen); //буфер
 	printf("  -a, --ipv4-addr <tun_lip/tun_rip>   pointopoint IPv4 pair of the virtual interface\n");
 	printf("                  <tun_lip/pfx_len>   IPv4 address/prefix length pair\n");
 	printf("  -A, --ipv6-addr <tun_ip6/pfx_len>   IPv6 address/prefix length pair\n");
